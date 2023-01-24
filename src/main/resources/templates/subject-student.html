@@ -1,0 +1,364 @@
+<!--
+    提交文件（论文定稿） localhost:8080/subject/fileUp 下载某篇论文定稿
+    localhost:8080/subject/fileDown/{subjectId}
+-->
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>学生课题</title>
+    <link rel="stylesheet" href="../static/layui/css/layui.css"/>
+    <script src="../static/layui/layui.js"></script>
+    <script src="../static/vue.global.js"></script>
+    <script src="../static/axios.min.js"></script>
+    <script type="text/javascript" src="../static/jquery-1.12.4.min.js"></script>
+</head>
+<body>
+<div id="app" style="width: 100%">
+    <!--导航栏-->
+    <ul class="layui-nav">
+        <li class="layui-nav-item">
+            <a href="/index-student">课题论文管理系统</a>
+        </li>
+        <li class="layui-nav-item">
+            <a href="/subject-student">查看\编辑课题信息</a>
+        </li>
+        <li class="layui-nav-item">
+            <a href="/openingReport-student">查看\编辑开题报告</a>
+        </li>
+        <li class="layui-nav-item">
+            <a>欢迎你，{{username}}</a>
+            <dl class="layui-nav-child">
+                <dd><a href="/user/logout">退出登录</a></dd>
+            </dl>
+        </li>
+    </ul>
+    <!--申报课题-->
+    <div v-if="!subject" style="margin: auto; margin-top: 30px; width: 70%">
+        <h2>待申报课题</h2>
+        <form class="layui-form" >
+            <div class="layui-form-item">
+                <label class="layui-form-label">课题名称</label>
+                <div class="layui-input-block">
+                    <input
+                            type="text"
+                            required
+                            lay-verify="required"
+                            placeholder="请输入课题名称"
+                            autocomplete="off"
+                            class="layui-input"
+                            v-model="commitSubject.subjectName"
+                    />
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">指导教师</label>
+                <div class="layui-form layui-input-block">
+                    <select name="type"
+                            v-model="commitSubject.instructorId">
+                        <template v-if="instructorsState">
+                            <option
+                                    v-for="item in instructors"
+                                    :value="item.instructorId"
+                            >
+                                [{{item.instructorId}}]{{item.instructorName}}
+                            </option>
+                        </template>
+                        <template v-else>
+                            <option value="">未查询到指导教师</option>
+                        </template>
+                    </select>
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">简介</label>
+                <div class="layui-input-block">
+              <textarea
+                      name="desc"
+                      placeholder="请输入内容"
+                      class="layui-textarea"
+                      required
+                      v-model="commitSubject.introduction"
+              ></textarea>
+                </div>
+            </div>
+        </form>
+        <div class="layui-input-block">
+            <button class="layui-btn" @click="commitSubjectFormSubmit">
+                立即提交
+            </button>
+            <button
+                    type="reset"
+                    class="layui-btn layui-btn-primary"
+                    @click="commitSubjectFormRenew"
+            >
+                重置
+            </button>
+        </div>
+    </div>
+
+    <!--修改课题-->
+    <div v-else-if="subject.subjectState==3" style="margin: auto; margin-top: 30px; width: 70%">
+        <h2>待修改课题</h2>
+        <form class="layui-form">
+            <div class="layui-form-item">
+                <label class="layui-form-label">课题名称</label>
+                <div class="layui-input-block">
+                    <input
+                            type="text"
+                            required
+                            lay-verify="required"
+                            placeholder="请输入课题名称"
+                            autocomplete="off"
+                            class="layui-input"
+                            v-model="updateSubject.subjectName"
+                    />
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">简介</label>
+                <div class="layui-input-block">
+              <textarea
+                      name="desc"
+                      placeholder="请输入内容"
+                      class="layui-textarea"
+                      v-model="updateSubject.introduction"
+              ></textarea>
+                </div>
+            </div>
+        </form>
+        <div class="layui-input-block">
+            <button class="layui-btn" @click="updateSubjectFormSubmit">
+                立即提交
+            </button>
+            <button
+                    type="reset"
+                    class="layui-btn layui-btn-primary"
+                    @click="updateSubjectFormRenew"
+            >
+                重置
+            </button>
+        </div>
+    </div>
+
+    <!--查看课题-->
+    <div v-else style="margin: auto; margin-top: 30px; width: 70%">
+        <h2>课题信息</h2>
+        <form class="layui-form">
+            <div class="layui-form-item">
+                <label class="layui-form-label">课题名称</label>
+                <div class="layui-input-block">
+                    <input
+                            type="text"
+                            class="layui-input"
+                            v-model="updateSubject.subjectName"
+                            disabled
+                    />
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">申报时间</label>
+                <div class="layui-input-block">
+                    <input
+                            type="text"
+                            class="layui-input"
+                            v-model="subject.applicationTime"
+                            disabled
+                    />
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">指导教师</label>
+                <div class="layui-input-block">
+                    <input
+                            type="text"
+                            class="layui-input"
+                            v-model="instructorName"
+                            disabled
+                    />
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">当前状态</label>
+                <div class="layui-input-block">
+                    <input
+                            type="text"
+                            class="layui-input"
+                            v-model="currentState"
+                            disabled
+                    />
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">简介</label>
+                <div class="layui-input-block">
+              <textarea
+                      style="height: 200px"
+                      placeholder="请输入内容"
+                      class="layui-textarea"
+                      v-model="updateSubject.introduction"
+                      disabled
+              ></textarea>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+<script>
+    const {createApp} = Vue;
+    createApp({
+        data() {
+            return {
+                username: "",
+                user: null,
+                subject: null,
+                introduction: null,
+                currentState: "",
+                instructors: [],
+                instructorName: "",
+                commitSubject: {
+                    subjectName: "",
+                    instructorId: "",
+                    introduction: "",
+                },
+                updateSubject: {
+                    subjectId: "",
+                    subjectName: "",
+                    introduction: "",
+                },
+                instructorsState: false,
+            };
+        },
+        async created() {
+            this.getAllInstructor();
+            this.getUser();
+            await this.getSubject();
+            if (this.subject != null) {
+                this.updateSubject.subjectId = this.subject['subjectId'];
+                this.updateSubject.subjectName = this.subject['subjectName'];
+                this.updateSubject.introduction = this.introduction;
+            }
+            this.updateForm();
+        },
+        methods: {
+            getUser() {
+                let that = this;
+                axios
+                    .get("/user/getUser")
+                    .then(function (response) {
+                        console.log(response.data);
+                        if (response.data.code == 200) {
+                            that.user = response.data;
+                            that.username = response.data.name;
+                        }
+                    })
+                    .catch(function (error) {
+                        console.log("未查询到用户信息");
+                    });
+            },
+            getAllInstructor() {
+                let that = this;
+                axios
+                    .get("/getAllInstructor")
+                    .then(function (response) {
+                        console.log(response.data.instructor)
+                        for (let ins of response.data.instructor) {
+                            that.instructors.push({
+                                instructorName: ins['instructorName'],
+                                instructorId: ins['instructorId']
+                            })
+                        }
+                        that.instructorsState = true;
+                        that.updateForm();
+                    })
+                    .catch(function (error) {
+                        console.log(error);
+                        layer.msg("查询指导教师失败");
+                    });
+            },
+            async getSubject() {
+                let that = this;
+                await axios
+                    .get("/subject/getSubject")
+                    .then(function (response) {
+                        console.log(response)
+                        if (response.data.code == 200) {
+                            that.subject = response.data.subject;
+                            that.currentState=response.data.subjectState;
+                            that.instructorName= response.data.instructorName;
+                        }
+                    })
+                    .catch(function (error) {
+                        layer.msg("查询课题失败");
+                    });
+                if (that.subject != null) {
+                    await axios
+                        .get("/subject/getSubjectIntroduction/" + that.subject.subjectId)
+                        .then(function (response) {
+                            console.log(response)
+                            if (response.data.code == 200) {
+                                that.introduction = response.data.introduction;
+                            }
+                        })
+                        .catch(function (error) {
+                            layer.msg("查询课题失败");
+                        });
+                }
+            },
+            commitSubjectFormRenew() {
+                this.commitSubject.subjectName = "";
+                this.commitSubject.instructorId = "";
+                this.commitSubject.introduction = "";
+            },
+            commitSubjectFormSubmit() {
+                let that = this;
+                var InstructorChoice=$(".layui-this");
+                this.commitSubject.instructorId=InstructorChoice.attr('lay-value')
+                console.log(this.commitSubject);
+                axios
+                    .post("/subject/commitSubject", this.commitSubject)
+                    .then(function (response) {
+                        if (response.data.code == 200) {
+                            layer.msg("提交成功");
+                            window.location.reload();
+                        } else {
+                            layer.msg("提交失败");
+                        }
+                    })
+                    .catch(function (error) {
+                        console.log(error)
+                        layer.msg("提交失败");
+                    });
+            },
+            updateSubjectFormSubmit() {
+                let that = this;
+                console.log(this.updateSubject);
+                axios
+                    .post("/subject/updateSubject", this.updateSubject)
+                    .then(function (response) {
+                        if (response.data.code == 200) {
+                            layer.msg("修改成功");
+                            that.getSubject();
+                        } else {
+                            layer.msg("修改失败");
+                        }
+                    })
+                    .catch(function (error) {
+                        layer.msg("修改失败");
+                    });
+            },
+            updateSubjectFormRenew() {
+                this.updateSubject.subjectName = this.subject.subjectName;
+                this.updateSubject.introduction = this.subject.introduction;
+            },
+            updateForm(){
+                layui.use('form', function(){
+                    var form = layui.form;
+                    form.render('select');
+                });
+            }
+        },
+    }).mount("#app");
+</script>
+</html>

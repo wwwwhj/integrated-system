@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>教师首页</title>
+    <link rel="stylesheet" href="../static/layui/css/layui.css"/>
+    <script src="../static/layui/layui.js"></script>
+    <script src="../static/vue.global.js"></script>
+    <script src="../static/axios.min.js"></script>
+</head>
+<body style="background-color: #c7ddef">
+<div id="app" style="width: 100%">
+    <!--导航栏-->
+    <ul class="layui-nav">
+        <li class="layui-nav-item">
+            <a href="/index-instructor">课题论文管理系统</a>
+        </li>
+        <li class="layui-nav-item">
+            <a href="/subject-instructor">课题信息</a>
+        </li>
+        <li class="layui-nav-item">
+            <a href="/openingReport-instructor">开题信息</a>
+        </li>
+        <li class="layui-nav-item">
+            <a href="/thesis-instructor">论文定稿</a>
+        </li>
+        <li class="layui-nav-item">
+            <a>欢迎你，{{username}}</a>
+            <dl class="layui-nav-child">
+                <dd><a href="/user/logout">退出登录</a></dd>
+            </dl>
+        </li>
+    </ul>
+    <!--个人信息栏-->
+    <div class="layui-row layui-col-space15" style="width: 70%; margin: auto; margin-top: 30px">
+        <!--个人信息-->
+        <div class="layui-card">
+            <div class="layui-card-header"><h3>教师信息</h3></div>
+            <div class="layui-card-body">
+                <template v-if="user">
+                    <li>学 院：{{user.belongTo}}</li>
+                    <li>姓 名：{{user.name}}</li>
+                    <li>编 号：{{user.userId}}</li>
+                    <li>用户身份：{{user.userType}}</li>
+                </template>
+                <template v-else>
+                    <li>未查询到个人信息</li>
+                </template>
+            </div>
+        </div>
+        <!--统计信息-->
+
+        <div class="layui-card">
+            <div class="layui-card-header">
+                <h3>课题统计(<a href="/subject-instructor">查看详情</a>)</h3>
+            </div>
+            <div class="layui-card-body">
+                <div>
+                    <template v-if="countResult">
+                        <div
+                                class="layui-colla-item"
+                                v-for="(value, key) in countResult"
+                        >
+                            <h2 class="layui-colla-title">{{key}}({{value}})</h2>
+                        </div>
+                    </template>
+                    <template v-else>
+                        <div class="layui-colla-item">
+                            <h2 class="layui-colla-title">未查询到统计信息</h2>
+                            <div class="layui-colla-content layui-show"></div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script>
+    const {createApp} = Vue;
+    layui.use("element", function () {
+        var element = layui.element;
+    });
+    createApp({
+        data() {
+            return {
+                user: null,
+                countResult: null,
+                username: "",
+                subjectState: {
+                    待审核课题申请: 2,
+                    2: "待审核课题申请",
+                    待修改课题申请: 3,
+                    3: "待修改课题申请",
+                    待提交开题报告: 11,
+                    11: "待提交开题报告",
+                    待审核开题报告: 12,
+                    12: "待审核开题报告",
+                    待修改开题报告: 13,
+                    13: "待修改开题报告",
+                    待提交论文定稿: 21,
+                    21: "待提交论文定稿",
+                    待审核论文定稿: 22,
+                    22: "待审核论文定稿",
+                    待修改论文定稿: 23,
+                    23: "待修改论文定稿",
+                    课题完成: 100,
+                    100: "课题完成",
+                },
+            };
+        },
+        created() {
+            this.getUser();
+        },
+        methods: {
+            getUser() {
+                let that = this;
+                axios
+                    .get("/subject/countSubjectState")
+                    .then(function (response) {
+                        console.log(response.data);
+                        if (response.data.code == 200) {
+                            that.countResult = response.data.countResult;
+                        }
+                    })
+                    .catch(function (error) {
+                    });
+                axios
+                    .get("/user/getUser")
+                    .then(function (response) {
+                        console.log(response.data);
+                        if (response.data.code == 200) {
+                            that.user = response.data;
+                            that.username = response.data.name;
+                        }
+                    })
+                    .catch(function (error) {
+                    });
+            },
+            getSubjects() {
+                [2, 3, 11, 12, 13, 21, 22, 23, 100].forEach((element) => {
+                    axios
+                        .get("/subject/getSubjectByState/" + element)
+                        .then(function (response) {
+                            console.log(response.data);
+                            if (response.data.code == 200) {
+                                that.subjects[that.subjectState[element]] =
+                                    response.data.subjects;
+                                that.students[that.subjectState[element]] =
+                                    response.data.students;
+                            }
+                        })
+                        .catch(function (error) {
+                        });
+                });
+            },
+        },
+    }).mount("#app");
+</script>
+</html>

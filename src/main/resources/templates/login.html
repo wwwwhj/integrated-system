@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>登录页</title>
+    <script src="../static/jquery-1.12.4.min.js"></script>
+    <link href="../static/bootstrap-3.4.1-dist/css/bootstrap.min.css"
+          rel="stylesheet">
+    <script src="../static/bootstrap-3.4.1-dist/js/bootstrap.min.js"></script>
+    <script src="../static/vue.global.js"></script>
+    <script src="../static/axios.min.js"></script>
+</head>
+
+<body>
+<div id="app" style="margin: auto; width: 50%; margin-top: 150px">
+    <div class="form-group">
+        <label for="userIdInput">学工号</label>
+        <input
+                type="text"
+                class="form-control"
+                id="userIdInput"
+                v-model="form.userID"
+        />
+        <small id="userIdInputHelp" class="form-text text-muted">{{msg}}</small>
+    </div>
+    <div class="form-group">
+        <label for="userPasswordIdInput">密码</label>
+        <input
+                type="password"
+                class="form-control"
+                id="userPasswordIdInput"
+                v-model="form.userPassword"
+        />
+    </div>
+    <button @click="login" class="btn btn-primary">登录</button>
+</div>
+
+<script>
+    const {createApp} = Vue;
+    createApp({
+        data() {
+            return {
+                form: {
+                    userID: "",
+                    userPassword: "",
+                },
+                msg: "请输入账号",
+            };
+        },
+        methods: {
+            login() {
+                let that = this;
+                axios
+                    .post(
+                        "/user/login",
+                        {
+                            userId: this.form.userID,
+                            userPassword: this.form.userPassword,
+                        },
+                        (headers = {"Content-Type": "application/json"})
+                    )
+                    .then(function (response) {
+                        console.log(response);
+                        if (response.data.code == 200) {
+                            that.msg = "登录成功,正在跳转！";
+                            if (response.data.userType == "instructor") {
+                                window.location.href = "/index-instructor";
+                            } else if (response.data.userType == "student") {
+                                window.location.href = "/index-student";
+                            } else if (response.data.userType == "admin") {
+                                window.location.href = "/user-manager";
+                            }
+                        } else {
+                            that.msg = response.data.msg;
+                        }
+                    })
+                    .catch(function (error) {
+                        console.log(error);
+                        that.msg = "登录失败！";
+                    });
+            },
+        },
+    }).mount("#app");
+</script>
+</body>
+</html>

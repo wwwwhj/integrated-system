@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>开题管理</title>
+    <link rel="stylesheet" href="../static/layui/css/layui.css"/>
+    <script src="../static/layui/layui.js"></script>
+    <script src="../static/vue.global.js"></script>
+    <script src="../static/axios.min.js"></script>
+    <script src="../static/jquery-1.12.4.min.js"></script>
+    <link href="../static/bootstrap-3.4.1-dist/css/bootstrap.min.css"
+            rel="stylesheet">
+    <script src="../static/bootstrap-3.4.1-dist/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div id="app" style="width: 100%">
+
+    <!-- 显示信息框 -->
+    <div class="modal fade" id="openingReportInfoModal"
+         role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document" style="width: 60%">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close"
+                            data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <h4 class="modal-title">开题信息</h4>
+                </div>
+                <div class="modal-body">
+                    <form class="form-horizontal">
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">课题意义</label>
+                            <div class="col-sm-10">
+                                <p class="form-control-static">
+                                    {{currentInfo.significance}}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">解决问题</label>
+                            <div class="col-sm-10">
+                                <p class="form-control-static">
+                                    {{currentInfo.solvedProblems}}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">研究计划</label>
+                            <div class="col-sm-10">
+                                <p class="form-control-static">
+                                    {{currentInfo.researchPlan}}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">创新之处</label>
+                            <div class="col-sm-10">
+                                <p class="form-control-static">
+                                    {{currentInfo.innovation}}
+                                </p>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--导航栏-->
+    <ul class="layui-nav">
+        <li class="layui-nav-item">
+            <a href="/index-instructor">课题论文管理系统</a>
+        </li>
+        <li class="layui-nav-item">
+            <a href="/subject-instructor">课题信息</a>
+        </li>
+        <li class="layui-nav-item">
+            <a href="/openingReport-instructor">开题信息</a>
+        </li>
+        <li class="layui-nav-item">
+            <a href="/thesis-instructor">论文定稿</a>
+        </li>
+        <li class="layui-nav-item">
+            <a>欢迎你，{{username}}</a>
+            <dl class="layui-nav-child">
+                <dd><a href="/user/logout">退出登录</a></dd>
+            </dl>
+        </li>
+    </ul>
+
+    <!-- 表格 -->
+    <div
+            class="layui-row layui-col-space15"
+            style="width: 90%; margin: auto; margin-top: 30px"
+    >
+        <!--课题信息-->
+        <table class="layui-table">
+            <thead>
+            <tr>
+                <th>编号</th>
+                <th>课题名称</th>
+                <th>所属班级</th>
+                <th>选题学生</th>
+                <th>指导老师</th>
+                <th>院系</th>
+                <th>状态</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <template v-if="currentOpeningReport">
+                <tr v-for="item in currentOpeningReport">
+                    <td>{{item.subjectId}}</td>
+                    <td>{{item.subjectName}}</td>
+                    <td>{{item.stuClass}}</td>
+                    <td>[{{item.stuId}}]{{item.stuName}}</td>
+                    <td>[{{item.instructorId}}]{{item.instructorName}}</td>
+                    <td>{{item.instructorCollege}}</td>
+                    <td>{{item.subjectState}}</td>
+                    <td>
+                        <button
+                                type="button"
+                                class="layui-btn layui-btn-sm"
+                                @click="showDetail(item.subjectId)"
+                        >
+                            查看开题报告
+                        </button>
+                        <template v-if="item.subjectState=='待审核开题报告'">
+                            <button
+                                    type="button"
+                                    class="layui-btn layui-btn-sm"
+                                    @click="agreeOpeningReport(item.subjectId)"
+                            >
+                                通过开题
+                            </button>
+                            <button
+                                    type="button"
+                                    class="layui-btn layui-btn-sm"
+                                    @click="rejectOpeningReport(item.subjectId)"
+                            >
+                                打回
+                            </button>
+                        </template>
+                    </td>
+                </tr>
+            </template>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+<script>
+    const {createApp} = Vue;
+    layui.use("element", function () {
+        var element = layui.element;
+    });
+    layui.use("layer", function () {
+        var layer = layui.layer;
+    });
+    createApp({
+        data() {
+            return {
+                countResult: null,
+                user: null,
+                username: "",
+                currentOpeningReport: [],
+                currentInfo: {
+                    innovation: "",
+                    researchPlan: "",
+                    significance: "",
+                    solvedProblems: ""
+                },
+            };
+        },
+        created() {
+            this.getUser();
+            this.getAllSubjectHaveOpeningReport();
+        },
+        methods: {
+            getUser() {
+                let that = this;
+                axios
+                    .get("/user/getUser")
+                    .then(function (response) {
+                        console.log(response.data);
+                        if (response.data.code == 200) {
+                            that.user = response.data;
+                            that.username = response.data.name;
+                        }
+                    })
+                    .catch(function (error) {
+                    });
+            },
+            getSubjects(type) {
+                let that = this;
+                axios
+                    .get("/subject/getSubjectByState/" + type)
+                    .then(function (response) {
+                        console.log(response.data);
+                        if (response.data.code == 200) {
+                            let temp = [];
+                            for (
+                                let index = 0;
+                                index < response.data.subject.length;
+                                index++
+                            ) {
+                                temp.push({
+                                    subjectId: response.data.openingReport[index].subjectId,
+                                    subjectName: response.data.subject[index].subjectName,
+                                    stuId: response.data.student[index].stuId,
+                                    stuName: response.data.student[index].stuName,
+                                    stuClass: response.data.stuClass[index],
+                                    instructorName: response.data.instructorName,
+                                    subjectState:
+                                        response.data.subjectState[index],
+                                });
+                            }
+                            that.currentOpeningReport = temp;
+                        }
+                    })
+                    .catch(function (error) {
+                        if (error instanceof TypeError) {
+                            layer.msg("暂无该类课题");
+                        } else {
+                            layer.msg("查询失败");
+                        }
+                    });
+            },
+            getAllSubjectHaveOpeningReport() {
+                let that = this;
+                axios
+                    .get("/subject/getSubjectHaveOpeningReport")
+                    .then(function (response) {
+                        console.log(response.data);
+                        if (response.data.code == 200) {
+                            let temp = [];
+                            for (
+                                let index = 0;
+                                index < response.data.subject.length;
+                                index++
+                            ) {
+                                temp.push({
+                                    subjectId: response.data.subject[index].subjectId,
+                                    subjectName: response.data.subject[index].subjectName,
+                                    stuId: response.data.student[index].stuId,
+                                    stuName: response.data.student[index].stuName,
+                                    stuClass: response.data.stuClass[index],
+                                    instructorId: response.data.instructorId,
+                                    instructorName: response.data.instructorName,
+                                    instructorCollege: response.data.instructorCollege,
+                                    subjectState:
+                                        response.data.subjectState[index],
+                                });
+                            }
+                            that.currentOpeningReport = temp;
+                        }
+                    })
+                    .catch(function (error) {
+                        layer.msg("查询失败");
+                    });
+            },
+            updateSubject() {
+                this.currentOpeningReport = null;
+                this.getAllSubjectHaveOpeningReport();
+            },
+            agreeOpeningReport(subjectId) {
+                let that = this;
+                axios
+                    .get("subject/updateSubjectState/" + subjectId + "/21")
+                    .then(function (response) {
+                        console.log(response.data);
+                        if (response.data.code == 200) {
+                            layer.msg("操作成功");
+                            that.updateSubject();
+                        }
+                    })
+                    .catch(function (error) {
+                        layer.msg("操作失败");
+                    });
+            },
+            rejectOpeningReport(subjectId) {
+                let that = this;
+                axios
+                    .get("subject/updateSubjectState/" + subjectId + "/13")
+                    .then(function (response) {
+                        console.log(response.data);
+                        if (response.data.code == 200) {
+                            layer.msg("操作成功");
+                            that.updateSubject();
+                        } else {
+                            layer.msg("操作失败");
+                        }
+                    })
+                    .catch(function (error) {
+                        layer.msg("操作失败");
+                    });
+            },
+            showDetail(subjectId) {
+                let that = this;
+                axios
+                    .get("/openingReport/getOpeningReport/" + subjectId)
+                    .then(function (response) {
+                        console.log(response.data);
+                        if (response.data.code == 200) {
+                            var info=that.currentInfo;
+                            info.innovation=response.data.openingReport.innovation;
+                            info.researchPlan=response.data.openingReport.researchPlan;
+                            info.significance=response.data.openingReport.significance;
+                            info.solvedProblems=response.data.openingReport.solvedProblems;
+                            $('#openingReportInfoModal').modal({
+                                backdrop:"static"
+                            });
+                        }
+                    })
+                    .catch(function (error) {
+                        layer.msg("查询失败");
+                    });
+            },
+        },
+    }).mount("#app");
+</script>
+</html>

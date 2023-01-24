@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.integratedsystem.mapper.OpeningReportMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.integratedsystem.pojo.OpeningReport">
+            <id property="subjectId" column="subject_id" jdbcType="INTEGER"/>
+            <result property="significance" column="significance" jdbcType="VARCHAR"/>
+            <result property="solvedProblems" column="solved_problems" jdbcType="VARCHAR"/>
+            <result property="researchPlan" column="research_plan" jdbcType="VARCHAR"/>
+            <result property="innovation" column="innovation" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        subject_id,significance,solved_problems,
+        research_plan,innovation
+    </sql>
+</mapper>

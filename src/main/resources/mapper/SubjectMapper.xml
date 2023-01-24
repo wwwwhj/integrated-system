@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.integratedsystem.mapper.SubjectMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.integratedsystem.pojo.Subject">
+            <id property="subjectId" column="subject_id" jdbcType="INTEGER"/>
+            <result property="subjectName" column="subject_name" jdbcType="VARCHAR"/>
+            <result property="stuId" column="stu_id" jdbcType="INTEGER"/>
+            <result property="instructorId" column="instructor_id" jdbcType="INTEGER"/>
+            <result property="applicationTime" column="application_time" jdbcType="DATE"/>
+            <result property="subjectState" column="subject_state" jdbcType="INTEGER"/>
+    </resultMap>
+    <resultMap id="stateCountMap" type="com.example.integratedsystem.pojo.StateCount">
+        <result property="subjectState" column="subject_state" jdbcType="INTEGER"/>
+        <result property="num" column="num" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        subject_id,subject_name,stu_id,
+        instructor_id,application_time,subject_state
+    </sql>
+    <insert id="insertSubjectIntroduction">
+        insert into subject_info values (#{subjectId},#{introduction})
+    </insert>
+    <delete id="deleteIntroductionBySubjectId">
+        delete from subject_info where subject_id=#{subjectId}
+    </delete>
+
+    <select id="getInstructorIdBySubjectId" resultType="java.lang.Integer">
+        select instructor_id from subject where subject_id=#{subjectId}
+    </select>
+    <select id="getSubjectIntroduction" resultType="java.lang.String">
+        select introduction from subject_info where subject_id=#{subjectId}
+    </select>
+    <select id="selectCountByState" resultType="com.example.integratedsystem.pojo.StateCount"
+        resultMap="stateCountMap">
+        select subject_state, count(*) as num from subject
+        where instructor_id=#{instructorId}
+        group by subject_state;
+    </select>
+    <select id="isSubjectExist" resultType="java.lang.Boolean">
+        select count(*) from subject where stu_id=#{stuId}
+    </select>
+    <select id="getSubjectByState" resultType="com.example.integratedsystem.pojo.Subject">
+        select * from subject where instructor_id=#{instructorId} and subject_state=#{state}
+    </select>
+    <select id="countNumByState" resultType="java.lang.Integer">
+        select count(*) as num from subject
+        where instructor_id=#{instructorId}
+        and subject_state=#{state}
+    </select>
+
+    <update id="updateStateBySubjectId">
+        update subject set subject_state=#{stateId} where subject_id=#{subjectId}
+    </update>
+    <update id="updateSubjectIntroduction">
+        update subject_info set introduction=#{introduction} where subject_id=#{subjectId}
+    </update>
+    <update id="updateSubjectNameById">
+        update subject set subject_name=#{subjectName} where subject_id=#{subjectId}
+    </update>
+
+</mapper>

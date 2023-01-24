@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>学生首页</title>
+    <link rel="stylesheet" href="../static/layui/css/layui.css"/>
+    <script src="../static/layui/layui.js"></script>
+    <script src="../static/vue.global.js"></script>
+    <script src="../static/axios.min.js"></script>
+</head>
+<body style="background-color: #c7ddef">
+<div id="app" style="width: 100%">
+    <!--导航栏-->
+    <ul class="layui-nav">
+        <li class="layui-nav-item">
+            <a href="/index-student">课题论文管理系统</a>
+        </li>
+        <li class="layui-nav-item">
+            <a href="/subject-student">查看\编辑课题信息</a>
+        </li>
+        <li class="layui-nav-item">
+            <a href="/openingReport-student">查看\编辑开题报告</a>
+        </li>
+        <li class="layui-nav-item">
+            <a>欢迎你，{{username}}</a>
+            <dl class="layui-nav-child">
+                <dd><a href="/user/logout">退出登录</a></dd>
+            </dl>
+        </li>
+    </ul>
+    <!--个人信息栏-->
+    <div class="layui-row layui-col-space15"
+         style="width: 70%; margin: auto; margin-top: 30px"
+    >
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header"><h3>个人信息</h3></div>
+                <div class="layui-card-body">
+                    <template v-if="user">
+                        <li>班 级：{{user.belongTo}}</li>
+                        <li>姓 名：{{user.name}}</li>
+                        <li>编 号：{{user.userId}}</li>
+                        <li>用户身份：{{user.userType}}</li>
+                    </template>
+                    <template v-else>
+                        <li>未查询到个人信息</li>
+                    </template>
+                </div>
+            </div>
+        </div>
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header"><h3>课题信息</h3></div>
+                <div class="layui-card-body">
+                    <template v-if="hasSubject">
+                        <li>课题编号：{{subject.subjectId}}</li>
+                        <li>课题状态：{{subject.subjectState}}</li>
+                        <li>课题名称：{{subject.subjectName}}</li>
+                        <li>指导老师：{{subject.instructorName}}</li>
+                        <li>所属院系：{{subject.instructorCollege}}</li>
+                    </template>
+                    <template v-else>
+                        <li>未查询到选题信息</li>
+                    </template>
+                </div>
+            </div>
+        </div>
+        <template v-if="subject.subjectState=='待提交论文定稿'
+        ||subject.subjectState=='待修改论文定稿'">
+        <div class="layui-col-md12">
+            <div class="layui-card">
+                <div class="layui-card-header"><h3>{{subject.subjectState}}</h3></div>
+                <div class="layui-card-body">
+                    <form action="/subject/fileUp" method="post" enctype="multipart/form-data">
+                        <input type="file" class="layui-btn layui-btn-sm" name="file">
+                        <input type="submit" class="layui-btn layui-btn-sm" value="上传">
+                    </form>
+                </div>
+            </div>
+        </div>
+        </template>
+    </div>
+</div>
+</body>
+<script>
+    const {createApp} = Vue;
+
+    createApp({
+        data() {
+            return {
+                user: null,
+                username: "",
+                subject:{},
+                hasSubject: false
+            };
+        },
+        created() {
+            this.getUser();
+        },
+        methods: {
+            getUser() {
+                let that = this;
+                axios
+                    .get("/user/getUser")
+                    .then(function (response) {
+                        console.log(response.data);
+                        if (response.data.code == 200) {
+                            that.user = response.data;
+                            that.username = response.data.name;
+                        }
+                    })
+                    .catch(function (error) {
+                        console.log("未查询到用户信息");
+                    });
+                axios
+                    .get("/subject/getSubject")
+                    .then(function (response) {
+                        console.log(response.data);
+                        if (response.data.code == 200) {
+                            let subject = response.data.subject;
+                            if (subject != null) {
+                                that.subject = {
+                                    subjectId: subject.subjectId,
+                                    subjectName: subject.subjectName,
+                                    applicationTime: subject.applicationTime,
+                                    subjectState: response.data.subjectState,
+                                    instructorName: response.data.instructorName,
+                                    instructorCollege: response.data.instructorCollege
+                                };
+                                this.hasSubject=true;
+                            }
+                        }
+                    })
+                    .catch(function (error) {
+                    });
+            },
+        },
+    }).mount("#app");
+</script>
+</html>

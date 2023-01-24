@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>教师课题</title>
+    <link rel="stylesheet" href="../static/layui/css/layui.css"/>
+    <script src="../static/layui/layui.js"></script>
+    <script src="../static/vue.global.js"></script>
+    <script src="../static/axios.min.js"></script>
+    <script src="../static/jquery-1.12.4.min.js"></script>
+    <link href="../static/bootstrap-3.4.1-dist/css/bootstrap.min.css"
+          rel="stylesheet">
+    <script src="../static/bootstrap-3.4.1-dist/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div id="app" style="width: 100%">
+    
+    <!--导航栏-->
+    <ul class="layui-nav">
+        <li class="layui-nav-item">
+            <a href="/index-instructor">课题论文管理系统</a>
+        </li>
+        <li class="layui-nav-item">
+            <a href="/subject-instructor">课题信息</a>
+        </li>
+        <li class="layui-nav-item">
+            <a href="/openingReport-instructor">开题信息</a>
+        </li>
+        <li class="layui-nav-item">
+            <a href="/thesis-instructor">论文定稿</a>
+        </li>
+        <li class="layui-nav-item">
+            <a>欢迎你，{{username}}</a>
+            <dl class="layui-nav-child">
+                <dd><a href="/user/logout">退出登录</a></dd>
+            </dl>
+        </li>
+    </ul>
+
+    <div class="layui-row layui-col-space15" style="width: 70%; margin: auto; margin-top: 30px">
+        <!--课题信息-->
+        <table class="layui-table">
+            <thead>
+            <tr>
+                <th>编号</th>
+                <th>课题名称</th>
+                <th>选题学生</th>
+                <th>状态</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <template v-if="currentSubjects">
+                <tr v-for="item in currentSubjects">
+                    <td>{{item.subjectId}}</td>
+                    <td>{{item.subjectName}}</td>
+                    <td>[{{item.stuClass}}]{{item.studentName}}</td>
+                    <td>{{item.subjectState}}</td>
+                    <td>
+                        <button
+                                type="button"
+                                class="layui-btn layui-btn-sm"
+                                @click="downloadThesis(item.subjectId)"
+                        >
+                            下载定稿
+                        </button>
+                        <template v-if="item.subjectState=='待审核论文定稿'">
+                            <button
+                                    type="button"
+                                    class="layui-btn layui-btn-sm"
+                                    @click="agreeThesis(item.subjectId)"
+                            >
+                                结题
+                            </button>
+                            <button
+                                    type="button"
+                                    class="layui-btn layui-btn-sm"
+                                    @click="rejectThesis(item.subjectId)"
+                            >
+                                打回
+                            </button>
+                        </template>
+                    </td>
+                </tr>
+            </template>
+            <template v-else> 正在检索{{currentState}}</template>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+<script>
+    const {createApp} = Vue;
+    layui.use("element", function () {
+        var element = layui.element;
+    });
+    layui.use("layer", function () {
+        var layer = layui.layer;
+    });
+    createApp({
+        data() {
+            return {
+                countResult: null,
+                user: null,
+                username: "",
+                currentSubjects: [],
+                currentIntroduction: "",
+                currentState: "",
+            };
+        },
+        created() {
+            this.getUser();
+            this.getAllSubject();
+        },
+        methods: {
+            getUser() {
+                let that = this;
+                axios
+                    .get("/user/getUser")
+                    .then(function (response) {
+                        console.log(response.data);
+                        if (response.data.code == 200) {
+                            that.user = response.data;
+                            that.username = response.data.name;
+                        }
+                    })
+                    .catch(function (error) {
+                    });
+            },
+            getAllSubject() {
+                let that = this;
+                axios
+                    .get("/subject/getSubjectHaveThesis")
+                    .then(function (response) {
+                        console.log(response.data);
+                        if (response.data.code == 200) {
+                            let temp = [];
+                            for (
+                                let index = 0;
+                                index < response.data.subject.length;
+                                index++
+                            ) {
+                                temp.push({
+                                    subjectId: response.data.subject[index].subjectId,
+                                    subjectName: response.data.subject[index].subjectName,
+                                    studentName: response.data.student[index].stuName,
+                                    stuClass: response.data.stuClass[index],
+                                    instructorName: response.data.instructorName,
+                                    applicationTime: response.data.subject[index].applicationTime,
+                                    subjectState:
+                                        response.data.subjectState[index],
+                                });
+                            }
+                            that.currentSubjects = temp;
+                        }
+                    })
+                    .catch(function (error) {
+                        if (error instanceof TypeError) {
+                            layer.msg("暂无课题");
+                        } else {
+                            layer.msg("查询失败");
+                        }
+                    });
+            },
+            updateSubject() {
+                console.log(this.currentState);
+                if (this.currentState != "") {
+                    this.currentSubjects = null;
+                    this.getSubjects(this.currentState);
+                } else {
+                    this.currentSubjects = null;
+                    this.getAllSubject();
+                }
+            },
+            deleteSubject(subjectId) {
+                let that = this;
+                axios
+                    .get("/subject/deleteSubject/" + subjectId)
+                    .then(function (response) {
+                        console.log(response.data);
+                        if (response.data.code == 200) {
+                            layer.msg("操作成功");
+                            that.updateSubject();
+                        }
+                    })
+                    .catch(function (error) {
+                        layer.msg("操作失败");
+                    });
+            },
+            agreeThesis(subjectId) {
+                let that = this;
+                axios
+                    .get("subject/updateSubjectState/" + subjectId + "/100")
+                    .then(function (response) {
+                        console.log(response.data);
+                        if (response.data.code == 200) {
+                            layer.msg("操作成功");
+                            that.updateSubject();
+                        }
+                    })
+                    .catch(function (error) {
+                        layer.msg("操作失败");
+                    });
+            },
+            rejectThesis(subjectId) {
+                let that = this;
+                axios
+                    .get("subject/updateSubjectState/" + subjectId + "/23")
+                    .then(function (response) {
+                        console.log(response.data);
+                        if (response.data.code == 200) {
+                            layer.msg("操作成功");
+                            that.updateSubject();
+                        } else {
+                            layer.msg("操作失败");
+                        }
+                    })
+                    .catch(function (error) {
+                        layer.msg("操作失败");
+                    });
+            },
+            downloadThesis(subjectId){
+                let a = document.createElement('a');
+                a.href ="subject/fileDown/" + subjectId;
+                a.click();
+                // axios
+                //     .get("subject/fileDown/" + subjectId)
+                //     .then(function (response) {
+                //         console.log(response);
+                //     })
+                //     .catch(function (error) {
+                //         layer.msg(error);
+                //     });
+            }
+        },
+    }).mount("#app");
+</script>
+</html>

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>用户管理</title>
+    <link rel="stylesheet" href="../static/layui/css/layui.css"/>
+    <script src="../static/layui/layui.js"></script>
+    <script src="../static/vue.global.js"></script>
+    <script src="../static/axios.min.js"></script>
+    <script src="../static/jquery-1.12.4.min.js"></script>
+    <link href="../static/bootstrap-3.4.1-dist/css/bootstrap.min.css"
+          rel="stylesheet">
+    <script src="../static/bootstrap-3.4.1-dist/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div id="app" style="width: 100%">
+
+    <!-- 添加用户框 -->
+    <div class="modal fade" id="addUserModal"
+         role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div>
+                    <div class="modal-header">
+                        添加用户
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form class="layui-form">
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">用户id</label>
+                                <div class="layui-input-block">
+                                    <input
+                                            type="text"
+                                            required
+                                            lay-verify="required"
+                                            placeholder="请输入id"
+                                            autocomplete="off"
+                                            class="layui-input"
+                                            v-model="addUserInfo.userId"
+                                    />
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">姓名</label>
+                                <div class="layui-input-block">
+                                    <input
+                                            type="text"
+                                            required
+                                            lay-verify="required"
+                                            placeholder="请输入姓名"
+                                            autocomplete="off"
+                                            class="layui-input"
+                                            v-model="addUserInfo.userName"
+                                    />
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">密码</label>
+                                <div class="layui-input-block">
+                                    <input
+                                            type="password"
+                                            required
+                                            lay-verify="required"
+                                            placeholder="请输入密码"
+                                            autocomplete="off"
+                                            class="layui-input"
+                                            v-model="addUserInfo.userPassword"
+                                    />
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">角色</label>
+                                <div class="layui-form layui-input-block">
+                                    <select v-model="addUserInfo.userType">
+                                        <option value="student">
+                                            学生
+                                        </option>
+                                        <option value="instructor">
+                                            教师
+                                        </option>
+                                        <option value="admin">
+                                            管理员
+                                        </option>
+                                    </select>
+                                </div>
+                                <!--                    <div class="layui-form-item">-->
+                                <!--                        <label class="layui-form-label">密码</label>-->
+                                <!--                        <div class="layui-form layui-input-block">-->
+                                <!--                            <select name="type"-->
+                                <!--                                    v-model="addUserInfo.userPassword">-->
+                                <!--                                <template v-if="instructorsState">-->
+                                <!--                                    <option-->
+                                <!--                                            v-for="item in instructors"-->
+                                <!--                                            :value="item.instructorId"-->
+                                <!--                                    >-->
+                                <!--                                    </option>-->
+                                <!--                                </template>-->
+                                <!--                                <template v-else>-->
+                                <!--                                    <option value="">未查询到指导教师</option>-->
+                                <!--                                </template>-->
+                                <!--                            </select>-->
+                                <!--                        </div>-->
+                                <!--                    </div>-->
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <div class="layui-input-block">
+                            <button class="layui-btn" @click="addUser">
+                                立即提交
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑用户 -->
+    <div class="modal fade" id="updateUserModal"
+         role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div>
+                    <div class="modal-header">
+                        编辑用户
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form class="layui-form">
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">用户id</label>
+                                <div class="layui-input-block">
+                                    <input
+                                            type="text"
+                                            class="layui-input"
+                                            v-model="updateUserInfo.userId"
+                                            disabled
+                                    />
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">姓名</label>
+                                <div class="layui-input-block">
+                                    <input
+                                            type="text"
+                                            class="layui-input"
+                                            v-model="updateUserInfo.userName"
+                                    />
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">密码</label>
+                                <div class="layui-input-block">
+                                    <input
+                                            type="password"
+                                            placeholder="请输入新密码"
+                                            autocomplete="off"
+                                            class="layui-input"
+                                            v-model="updateUserInfo.userPassword"
+                                    />
+                                </div>
+                            </div>
+                            <div class="layui-form-item">
+                                <label class="layui-form-label">角色</label>
+                                <div class="layui-input-block">
+                                    <input
+                                            type="text"
+                                            class="layui-input"
+                                            v-model="updateUserInfo.userType"
+                                            disabled
+                                    />
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <div class="layui-input-block">
+                            <button class="layui-btn" @click="updateUser">
+                                保存
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--导航栏-->
+    <ul class="layui-nav">
+        <li class="layui-nav-item">
+            <a href="/user-manager">课题论文管理系统-用户管理</a>
+        </li>
+        <li class="layui-nav-item">
+            <a>欢迎你，{{username}}</a>
+            <dl class="layui-nav-child">
+                <dd><a href="/user/logout">退出登录</a></dd>
+            </dl>
+        </li>
+    </ul>
+    <div class="layui-row layui-col-space15" style="width: 70%; margin: auto; margin-top: 30px">
+        <!--        <button-->
+        <!--                type="button"-->
+        <!--                class="layui-btn layui-btn-lg"-->
+        <!--                @click="showAddUserModal"-->
+        <!--        >-->
+        <!--            添加用户-->
+        <!--        </button>-->
+        <!--用户信息-->
+        <table class="layui-table">
+            <thead>
+            <tr>
+                <th>id</th>
+                <th>姓名</th>
+                <th>身份</th>
+                <th>所属</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <template v-if="currentUsers">
+                <tr v-for="(item,index) in currentUsers">
+                    <td>{{item.userId}}</td>
+                    <td>{{item.userName}}</td>
+                    <td>{{item.userType}}</td>
+                    <td>{{item.belongTo}}</td>
+                    <td>
+                        <button
+                                type="button"
+                                class="layui-btn layui-btn-sm"
+                                @click="showUpdateUserModal(index)"
+                        >
+                            编辑
+                        </button>
+                        <button
+                                type="button"
+                                class="layui-btn layui-btn-sm"
+                                @click="deleteUser(item.userId)"
+                        >
+                            删除
+                        </button>
+                    </td>
+                </tr>
+            </template>
+            </tbody>
+        </table>
+    </div>
+    <div style="margin-left: 60%">
+        <button
+                type="button"
+                class="layui-btn layui-btn-sm"
+                @click="lastPage"
+        >
+            上一页
+        </button>
+        <button
+                type="button"
+                class="layui-btn layui-btn-sm"
+                @click="nextPage"
+        >
+            下一页
+        </button>
+    </div>
+</div>
+
+</body>
+<script>
+    const {createApp} = Vue;
+    layui.use("element", function () {
+        var element = layui.element;
+    });
+    layui.use("layer", function () {
+        var layer = layui.layer;
+    });
+    createApp({
+        data() {
+            return {
+                pageNum: 1,
+                pageInfo: null,
+                data: null,
+                user: null,
+                username: "",
+                currentUsers: [],
+                addUserInfo: {
+                    userId: "",
+                    userPassword: "",
+                    userName: "",
+                    userType: "",
+                    belongTo: ""
+                },
+                updateUserInfo: {
+                    userId: "",
+                    userName: "",
+                    userPassword: "",
+                    userType: ""
+                }
+            };
+        },
+        created() {
+            this.getUser();
+            this.getAllUser();
+        },
+        methods: {
+            getUser() {
+                let that = this;
+                axios
+                    .get("/user/getUser")
+                    .then(function (response) {
+                        console.log(response.data);
+                        if (response.data.code == 200) {
+                            that.user = response.data;
+                            that.username = response.data.name;
+                        } else {
+                            layer.msg("查询失败");
+                        }
+                    })
+                    .catch(function (error) {
+                        layer.msg("查询失败");
+                    });
+            },
+            getAllUser() {
+                let that = this;
+                axios
+                    .get("/user/getAllUser/" + that.pageNum)
+                    // .get("/user/getAllUsers")
+                    .then(function (response) {
+                        console.log(response.data);
+                        if (response.data.code == 200) {
+                            that.data = response.data;
+                            that.pageInfo = response.data.pageInfo;
+                            let temp = [];
+                            for (
+                                let index = 0;
+                                // index < response.data.users.length;
+                                index < response.data.pageInfo.size;
+                                index++
+                            ) {
+                                temp.push({
+                                    userId: response.data.pageInfo.list[index].userId,
+                                    userName: response.data.pageInfo.list[index].userName,
+                                    // userId: response.data.users[index].userId,
+                                    // userName: response.data.users[index].userName,
+                                    userType: response.data.userType[index],
+                                    belongTo: response.data.belongTo[index]
+                                });
+                            }
+                            that.currentUsers = temp;
+                        } else {
+                            layer.msg("查询失败");
+                        }
+                    })
+                    .catch(function (error) {
+                        layer.msg("查询失败");
+                    });
+            },
+            lastPage(){
+                this.pageNum--;
+                this.getAllUser();
+            },
+            nextPage(){
+                this.pageNum++;
+                this.getAllUser();
+            },
+            showAddUserModal() {
+                this.addUserInfo.userId="";
+                this.addUserInfo.userPassword="";
+                this.addUserInfo.userName="";
+                this.addUserInfo.userType="";
+                $('#addUserModal').modal({
+                    backdrop: "static"
+                });
+            },
+            showUpdateUserModal(index) {
+                this.updateUserInfo.userId = this.currentUsers[index].userId;
+                this.updateUserInfo.userName = this.currentUsers[index].userName;
+                this.updateUserInfo.userType = this.data.userType[index];
+                this.updateUserInfo.userPassword = "";
+                $('#updateUserModal').modal({
+                    backdrop: "static"
+                });
+            },
+            addUser() {
+
+            },
+            updateUser() {
+                let that = this;
+                axios
+                    .post("/user/update", {
+                        userId: this.updateUserInfo.userId,
+                        userName: this.updateUserInfo.userName,
+                        userPassword: this.updateUserInfo.userPassword
+                    })
+                    .then(function (response) {
+                        console.log(response.data);
+                        if (response.data.code == 200) {
+                            layer.msg("操作成功");
+                            window.location.reload();
+                        }
+                    })
+                    .catch(function (error) {
+                        layer.msg("操作失败");
+                    });
+            },
+            deleteUser(userId) {
+                let that = this;
+                if(!confirm("确认删除？")){
+                    return;
+                }
+                axios
+                    .post("/user/delete/" + userId)
+                    .then(function (response) {
+                        console.log(response.data);
+                        if (response.data.code == 200) {
+                            layer.msg("操作成功");
+                            window.location.reload();
+                        }
+                    })
+                    .catch(function (error) {
+                        layer.msg("操作失败");
+                    });
+            }
+        },
+    }).mount("#app");
+</script>
+</html>

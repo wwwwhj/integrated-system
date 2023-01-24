@@ -1,0 +1,366 @@
+<!--获取开题报告-->
+<!--http://localhost:8080/openingReport/getOpeningReport-->
+
+<!--提交开题报告-->
+<!--http://localhost:8080/openingReport/saveOpeningReport-->
+<!--<form action="localhost:8080/openingReport/saveOpeningReport" method="post">-->
+<!--    课题意义：<input type="text" name="significance">-->
+<!--    解决的问题：<input type="text" name="solvedProblems">-->
+<!--    研究计划：<input type="text" name="researchPlan">-->
+<!--    创新之处：<input type="text" name="innovation">-->
+<!--</form>-->
+
+<!--提交开题报告-->
+<!--http://localhost:8080/openingReport/saveOpeningReport-->
+<!--<form action="localhost:8080/openingReport/saveOpeningReport" method="post">-->
+<!--    -&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;隐藏: <input type="text" name="subjectId" hidden> &#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;-->
+<!--    课题意义：<input type="text" name="significance">-->
+<!--    解决的问题：<input type="text" name="solvedProblems">-->
+<!--    研究计划：<input type="text" name="researchPlan">-->
+<!--    创新之处：<input type="text" name="innovation">-->
+<!--</form>-->
+
+<!--修改开题报告-->
+<!--http://localhost:8080/openingReport/updateOpeningReport-->
+<!--<form action="localhost:8080/openingReport/saveOpeningReport" method="post">-->
+<!--    -&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;隐藏: <input type="text" name="subjectId" hidden> &#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;-->
+<!--    课题意义：<input type="text" name="significance">-->
+<!--    解决的问题：<input type="text" name="solvedProblems">-->
+<!--    研究计划：<input type="
+text" name="researchPlan">-->
+<!--    创新之处：<input type="text" name="innovation">-->
+<!--</form>-->
+<!--
+    提交文件（论文定稿） localhost:8080/subject/fileUp 下载某篇论文定稿
+    localhost:8080/subject/fileDown/{subjectId}
+-->
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>学生课题</title>
+    <link rel="stylesheet" href="../static/layui/css/layui.css"/>
+    <script src="../static/layui/layui.js"></script>
+    <script src="../static/vue.global.js"></script>
+    <script src="../static/axios.min.js"></script>
+    <script type="text/javascript" src="../static/jquery-1.12.4.min.js"></script>
+</head>
+<body>
+<div id="app" style="width: 100%">
+    <!--导航栏-->
+    <ul class="layui-nav">
+        <li class="layui-nav-item">
+            <a href="/index-student">课题论文管理系统</a>
+        </li>
+        <li class="layui-nav-item">
+            <a href="/subject-student">查看\编辑课题信息</a>
+        </li>
+        <li class="layui-nav-item">
+            <a href="/openingReport-student">查看\编辑开题报告</a>
+        </li>
+        <li class="layui-nav-item">
+            <a>欢迎你，{{username}}</a>
+            <dl class="layui-nav-child">
+                <dd><a href="/user/logout">退出登录</a></dd>
+            </dl>
+        </li>
+    </ul>
+
+    <div v-if="data.subjectState=='待提交开题报告'" style="margin: auto; margin-top: 30px; width: 70%">
+        <h2>待填写开题信息</h2>
+        <form class="layui-form">
+            <div class="layui-form-item">
+                <label class="layui-form-label">课题名称</label>
+                <div class="layui-input-block">
+                    <input
+                            type="text"
+                            placeholder="请输入课题名称"
+                            autocomplete="off"
+                            class="layui-input"
+                            v-model="data.subjectName"
+                            disabled
+                    />
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">课题意义</label>
+                <div class="layui-input-block">
+              <textarea
+                      style="height: 200px"
+                      placeholder="请输入内容"
+                      class="layui-textarea"
+                      v-model="openingReport.significance"
+              ></textarea>
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">解决的问题</label>
+                <div class="layui-input-block">
+              <textarea
+                      style="height: 200px"
+                      placeholder="请输入内容"
+                      class="layui-textarea"
+                      v-model="openingReport.solvedProblems"
+              ></textarea>
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">研究计划</label>
+                <div class="layui-input-block">
+              <textarea
+                      style="height: 200px"
+                      placeholder="请输入内容"
+                      class="layui-textarea"
+                      v-model="openingReport.researchPlan"
+              ></textarea>
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">创新之处</label>
+                <div class="layui-input-block">
+              <textarea
+                      style="height: 200px"
+                      placeholder="请输入内容"
+                      class="layui-textarea"
+                      v-model="openingReport.innovation"
+              ></textarea>
+                </div>
+            </div>
+            <div class="layui-input-block">
+                <button class="layui-btn" @click="commitOpeningReportFormSubmit">
+                    立即提交
+                </button>
+            </div>
+        </form>
+    </div>
+    <div v-else-if="data.subjectState=='待修改开题报告'" style="margin: auto; margin-top: 30px; width: 70%">
+        <h2>待修改开题信息</h2>
+        <form class="layui-form">
+            <div class="layui-form-item">
+                <label class="layui-form-label">课题名称</label>
+                <div class="layui-input-block">
+                    <input
+                            type="text"
+                            placeholder="请输入课题名称"
+                            autocomplete="off"
+                            class="layui-input"
+                            v-model="data.subjectName"
+                            disabled
+                    />
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">课题意义</label>
+                <div class="layui-input-block">
+              <textarea
+                      style="height: 200px"
+                      placeholder="请输入内容"
+                      class="layui-textarea"
+                      v-model="openingReport.significance"
+              ></textarea>
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">解决的问题</label>
+                <div class="layui-input-block">
+              <textarea
+                      style="height: 200px"
+                      placeholder="请输入内容"
+                      class="layui-textarea"
+                      v-model="openingReport.solvedProblems"
+              ></textarea>
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">研究计划</label>
+                <div class="layui-input-block">
+              <textarea
+                      style="height: 200px"
+                      placeholder="请输入内容"
+                      class="layui-textarea"
+                      v-model="openingReport.researchPlan"
+              ></textarea>
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">创新之处</label>
+                <div class="layui-input-block">
+              <textarea
+                      style="height: 200px"
+                      placeholder="请输入内容"
+                      class="layui-textarea"
+                      v-model="openingReport.innovation"
+              ></textarea>
+                </div>
+            </div>
+            <div class="layui-input-block">
+                <button class="layui-btn" @click="updateOpeningReportFormSubmit">
+                    立即提交
+                </button>
+            </div>
+        </form>
+    </div>
+    <div v-else style="margin: auto; margin-top: 30px; width: 70%">
+        <h2>开题信息</h2>
+        <form class="layui-form">
+            <div class="layui-form-item">
+                <label class="layui-form-label">课题名称</label>
+                <div class="layui-input-block">
+                    <input
+                            type="text"
+                            placeholder="请输入课题名称"
+                            autocomplete="off"
+                            class="layui-input"
+                            v-model="data.subjectName"
+                            disabled
+                    />
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">课题意义</label>
+                <div class="layui-input-block">
+              <textarea
+                      style="height: 200px"
+                      placeholder="请输入内容"
+                      class="layui-textarea"
+                      v-model="openingReport.significance"
+                      disabled
+              ></textarea>
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">解决的问题</label>
+                <div class="layui-input-block">
+              <textarea
+                      style="height: 200px"
+                      placeholder="请输入内容"
+                      class="layui-textarea"
+                      v-model="openingReport.solvedProblems"
+                      disabled
+              ></textarea>
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">研究计划</label>
+                <div class="layui-input-block">
+              <textarea
+                      style="height: 200px"
+                      placeholder="请输入内容"
+                      class="layui-textarea"
+                      v-model="openingReport.researchPlan"
+                      disabled
+              ></textarea>
+                </div>
+            </div>
+            <div class="layui-form-item layui-form-text">
+                <label class="layui-form-label">创新之处</label>
+                <div class="layui-input-block">
+              <textarea
+                      style="height: 200px"
+                      placeholder="请输入内容"
+                      class="layui-textarea"
+                      v-model="openingReport.innovation"
+                      disabled
+              ></textarea>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+<script>
+    const {createApp} = Vue;
+    createApp({
+        data() {
+            return {
+                username: "",
+                user: null,
+                openingReport: {
+                    subjectId: "1",
+                    significance: "2",
+                    solvedProblems: "3",
+                    researchPlan: "4",
+                    innovation: "5"
+                },
+                data: {}
+            };
+        },
+        async created() {
+            this.getUser();
+            await this.getOpeningReport();
+        },
+        methods: {
+            getUser() {
+                let that = this;
+                axios
+                    .get("/user/getUser")
+                    .then(function (response) {
+                        console.log(response.data);
+                        if (response.data.code == 200) {
+                            that.user = response.data;
+                            that.username = response.data.name;
+                        }
+                    })
+                    .catch(function (error) {
+                        console.log("未查询到用户信息");
+                    });
+            },
+            async getOpeningReport() {
+                let that = this;
+                await axios
+                    .get("/openingReport/getOpeningReport")
+                    .then(function (response) {
+                        console.log(response)
+                        if (response.data.code == 200) {
+                            if (response.data.openingReport==null){
+
+                            }else{
+                                that.openingReport = response.data.openingReport;
+                            }
+                            that.data = response.data;
+                        }
+                    })
+                    .catch(function (error) {
+                        layer.msg("查询课题失败");
+                    });
+            },
+            commitOpeningReportFormSubmit() {
+                let that = this;
+                console.log(this.openingReport);
+                alert(this.openingReport);
+                axios
+                    .post("/openingReport/saveOpeningReport", this.openingReport)
+                    .then(function (response) {
+                        if (response.data.code == 200) {
+                            layer.msg("提交成功");
+                        } else {
+                            layer.msg("提交失败");
+                        }
+                    })
+                    .catch(function (error) {
+                        console.log(error)
+                        layer.msg("提交失败");
+                    });
+            },
+            updateOpeningReportFormSubmit() {
+                let that = this;
+                console.log(this.openingReport);
+                axios
+                    .post("/openingReport/updateOpeningReport", this.openingReport)
+                    .then(function (response) {
+                        if (response.data.code == 200) {
+                            layer.msg("修改成功");
+                            window.location.reload();
+                        } else {
+                            layer.msg("修改失败");
+                        }
+                    })
+                    .catch(function (error) {
+                        alert("存在异常");
+                        layer.msg("修改失败");
+                    });
+            },
+        },
+    }).mount("#app");
+</script>
+</html>

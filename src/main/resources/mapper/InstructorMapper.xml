@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.integratedsystem.mapper.InstructorMapper">
+
+    <resultMap id="BaseResultMap" type="com.example.integratedsystem.pojo.Instructor">
+            <id property="instructorId" column="instructor_id" jdbcType="INTEGER"/>
+            <result property="instructorName" column="instructor_name" jdbcType="VARCHAR"/>
+            <result property="instructorCollegeId" column="instructor_college_id" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        instructor_id,instructor_name,instructor_college_id
+    </sql>
+    <select id="getCollegeNameByInstructorId" resultType="java.lang.String">
+        select college_name from instructor,college where instructor_id = #{instructorId}
+                                                      and college_id=instructor_college_id
+    </select>
+</mapper>
